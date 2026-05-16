@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "JP ChatBuddy",
+  "version": "1.0",
+  "description": "Chatbot luyện tiếng Nhật ngay trên mọi trang web.",
+  "permissions": ["activeTab", "storage", "scripting", "tabs"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "JP ChatBuddy"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["contentScript.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["dist/*", "dist/index.html", "dist/assets/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
