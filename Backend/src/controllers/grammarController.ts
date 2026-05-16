@@ -1,6 +1,6 @@
 // src/controllers/grammarController.ts
 import { Request, Response } from "express";
-import Conversation from "../models/ChatModel";
+import Conversation from "../models/chatModel";
 import { checkGrammarService } from "../services/grammarService";
 
 export async function checkGrammar(req: Request, res: Response) {
@@ -29,8 +29,10 @@ export async function checkGrammar(req: Request, res: Response) {
 
     // 2. Lọc tin nhắn của 'user' và CHỈ lấy những tin nhắn gửi sau 8h sáng
     const userContents = conversation.messages
-      .filter((m) => m.role === "user" && new Date(m.timestamp) >= today8AM)
-      .map((m) => m.content);
+      .filter(
+        (m: any) => m.role === "user" && new Date(m.timestamp) >= today8AM,
+      )
+      .map((m: any) => m.content);
 
     if (userContents.length === 0) {
       return res.json({

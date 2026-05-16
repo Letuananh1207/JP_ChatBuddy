@@ -1,7 +1,10 @@
 import express from "express";
 import * as vocabularyController from "../controllers/vocabularyController";
+import authMiddleware from "../middleware/authMiddleware";
 
 const router = express.Router();
+
+router.use(authMiddleware);
 
 // API: POST /api/vocabulary/add
 router.post("/add", vocabularyController.addWord);

@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, Document, Types } from "mongoose";
 
 export interface IMessage {
   role: "user" | "assistant";
@@ -7,11 +7,13 @@ export interface IMessage {
 }
 
 export interface IConversation extends Document {
+  user?: Types.ObjectId | string;
   messages: IMessage[];
   updatedAt: Date;
 }
 
 const ChatSchema: Schema = new Schema({
+  user: { type: Schema.Types.ObjectId, ref: "User", required: false },
   messages: [
     {
       role: { type: String, enum: ["user", "assistant"], required: true },

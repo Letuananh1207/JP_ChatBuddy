@@ -9,6 +9,7 @@ import connectDB from "./utils/db";
 import vocabularyRoutes from "./routes/vocabularyRoutes";
 import chatRoutes from "./routes/chatRoutes";
 import grammarRoutes from "./routes/grammarRoutes";
+import authRoutes from "./routes/authRoutes";
 
 const app: Application = express();
 
@@ -39,5 +40,6 @@ app.get("/health", (req, res) => {
 app.use("/api/vocabulary", vocabularyRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/grammar", grammarRoutes);
+app.use("/api/auth", authRoutes);
 
 export default app;

@@ -4,13 +4,22 @@ import { groq, GROQ_MODEL } from "../config/groq";
 export const chatWithAI = async (
   conversationId: string | null,
   userMessage: string,
-  quote?: string | null // Thêm tham số quote
+  quote?: string | null, // Thêm tham số quote
+  userId?: string | null,
+  newConversation: boolean = false,
 ) => {
   let conversation;
 
-  // 1. Tìm record hiện có: theo ID hoặc tìm record mới nhất trong DB
+  // 1. Tìm record hiện có: theo ID hoặc tạo mới nếu yêu cầu cuộc hội thoại mới;
+  // nếu không thì dùng conversation gần nhất của user.
   if (conversationId) {
     conversation = await Chat.findById(conversationId);
+  } else if (newConversation && userId) {
+    console.log("--- Creating a new conversation record for user ---");
+    conversation = new Chat({ user: userId, messages: [] });
+  } else if (userId) {
+    // Lấy conversation gần nhất của user này
+    conversation = await Chat.findOne({ user: userId }).sort({ updatedAt: -1 });
   } else {
     // Luôn lấy record gần nhất để tiếp tục trò chuyện trong 1 luồng duy nhất
     conversation = await Chat.findOne().sort({ updatedAt: -1 });
@@ -18,8 +27,10 @@ export const chatWithAI = async (
 
   // 2. Nếu không có bất kỳ record nào trong DB, mới tạo cái đầu tiên
   if (!conversation) {
-    console.log("--- Creating the first and only conversation record ---");
-    conversation = new Chat({ messages: [] });
+    console.log("--- Creating a new conversation record ---");
+    const init: any = { messages: [] };
+    if (userId) init.user = userId;
+    conversation = new Chat(init);
   }
 
   try {
@@ -64,11 +75,11 @@ export const chatWithAI = async (
     const aiResponse = completion.choices[0]?.message?.content || "";
 
     // 4. Lưu User message gốc (không kèm quote) để lịch sử chat sạch sẽ
-    return await saveAndReturn(conversation, userMessage, aiResponse);
+    return await saveAndReturn(conversation, userMessage, aiResponse, userId);
   } catch (error: any) {
     console.error("❌ Groq API Error:", error.message);
     throw new Error(
-      error.message.includes("429") ? "Konny bận quậy rồi!" : "Lỗi kết nối AI."
+      error.message.includes("429") ? "Konny bận quậy rồi!" : "Lỗi kết nối AI.",
     );
   }
 };
@@ -76,7 +87,8 @@ export const chatWithAI = async (
 async function saveAndReturn(
   conversation: any,
   userMsg: string,
-  aiMsg: string
+  aiMsg: string,
+  userId?: string | null,
 ) {
   // Push thêm vào mảng messages hiện có
   conversation.messages.push({
@@ -90,6 +102,11 @@ async function saveAndReturn(
     timestamp: new Date(),
   });
 
+  // Đảm bảo gắn user nếu có
+  if (userId && !conversation.user) {
+    conversation.user = userId;
+  }
+
   conversation.updatedAt = new Date();
   await conversation.save();
 
@@ -102,9 +119,15 @@ async function saveAndReturn(
 /**
  * Lấy lịch sử từ DUY NHẤT một record hội thoại mới nhất
  */
-export const getHistory = async (limit: number = 20) => {
+export const getHistory = async (
+  limit: number = 20,
+  userId?: string | null,
+) => {
   try {
-    const conversation = await Chat.findOne().sort({ updatedAt: -1 }).lean();
+    const query = userId ? { user: userId } : {};
+    const conversation = await Chat.findOne(query)
+      .sort({ updatedAt: -1 })
+      .lean();
     if (!conversation || !conversation.messages) return [];
 
     const lastMessages = conversation.messages.slice(-limit);
