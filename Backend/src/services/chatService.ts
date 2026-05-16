@@ -116,31 +116,72 @@ async function saveAndReturn(
   };
 }
 
+const mapMessages = (messages: any[], limit: number) => {
+  const lastMessages = messages.slice(-limit);
+  return lastMessages.map((msg: any) => ({
+    id: msg._id
+      ? msg._id.toString()
+      : `_${Math.random().toString(36).substr(2, 9)}`,
+    content: msg.content,
+    isChatBot: msg.role === "assistant",
+  }));
+};
+
 /**
- * Lấy lịch sử từ DUY NHẤT một record hội thoại mới nhất
+ * Lấy lịch sử theo conversationId hoặc cuộc hội thoại mới nhất của user
  */
 export const getHistory = async (
   limit: number = 20,
   userId?: string | null,
+  conversationId?: string | null,
 ) => {
   try {
-    const query = userId ? { user: userId } : {};
-    const conversation = await Chat.findOne(query)
-      .sort({ updatedAt: -1 })
-      .lean();
+    let conversation: any;
+
+    if (conversationId) {
+      const query: any = { _id: conversationId };
+      if (userId) query.user = userId;
+      conversation = await Chat.findOne(query).lean();
+    } else {
+      const query = userId ? { user: userId } : {};
+      conversation = await Chat.findOne(query)
+        .sort({ updatedAt: -1 })
+        .lean();
+    }
+
     if (!conversation || !conversation.messages) return [];
-
-    const lastMessages = conversation.messages.slice(-limit);
-
-    return lastMessages.map((msg: any) => ({
-      id: msg._id
-        ? msg._id.toString()
-        : `_${Math.random().toString(36).substr(2, 9)}`,
-      content: msg.content,
-      isChatBot: msg.role === "assistant",
-    }));
+    return mapMessages(conversation.messages, limit);
   } catch (error: any) {
     console.error("[DEBUG] Service GetHistory Error:", error.message);
     throw error;
   }
+};
+
+/**
+ * Danh sách các phiên trò chuyện của user (mới nhất trước)
+ */
+export const getConversations = async (
+  userId: string,
+  limit: number = 10,
+) => {
+  const conversations = await Chat.find({ user: userId })
+    .sort({ updatedAt: -1 })
+    .limit(limit)
+    .lean();
+
+  return conversations.map((conv: any) => {
+    const lastUserMsg = [...(conv.messages || [])]
+      .reverse()
+      .find((m: any) => m.role === "user");
+    const preview =
+      lastUserMsg?.content?.slice(0, 24) ||
+      (conv.messages?.length ? "..." : "Phiên mới");
+
+    return {
+      id: conv._id.toString(),
+      preview,
+      updatedAt: conv.updatedAt,
+      messageCount: conv.messages?.length || 0,
+    };
+  });
 };

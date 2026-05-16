@@ -2,26 +2,37 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { chatService, type SendMessagePayload } from "../services/api";
 
-export const useChatQuery = () => {
+export const useChatQuery = (
+  conversationId?: string | null,
+  options?: { isNewDraft?: boolean },
+) => {
   const queryClient = useQueryClient();
+  const isNewDraft = options?.isNewDraft ?? false;
 
-  // 1. Lấy lịch sử (mặc định lấy 10 cặp = 20 tin nhắn)
-  const historyQuery = useQuery({
-    queryKey: ["chatHistory"],
-    queryFn: () => chatService.fetchHistory(10),
+  const conversationsQuery = useQuery({
+    queryKey: ["conversations"],
+    queryFn: () => chatService.fetchConversations(10),
   });
 
-  // 2. Gửi tin nhắn (Payload giờ đây khớp hoàn toàn với chatService.sendMessage)
+  const historyQuery = useQuery({
+    queryKey: ["chatHistory", conversationId ?? "latest"],
+    queryFn: () =>
+      chatService.fetchHistory(10, conversationId ?? undefined),
+    enabled: !isNewDraft,
+  });
+
   const sendMutation = useMutation({
     mutationFn: (payload: SendMessagePayload) =>
       chatService.sendMessage(payload),
-    onSuccess: () => {
-      // Refresh lại danh sách tin nhắn ngay khi Konny vừa đáp
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["chatHistory"] });
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      return data;
     },
   });
 
   return {
+    conversationsQuery,
     historyQuery,
     sendMutation,
   };

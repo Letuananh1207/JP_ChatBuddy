@@ -1,11 +1,29 @@
 @import "tailwindcss";
 
-.hide-scrollbar {
-  overflow: auto; /* hoặc overflow-y: scroll; */
+html,
+body,
+#root {
+  height: 100%;
+}
 
-  /* Ẩn scrollbar trên Chrome, Edge, Safari */
+body {
+  overflow-y: auto;
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE, Edge cũ */
+}
+
+body::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge mới */
+}
+
+.hide-scrollbar {
+  overflow: auto; /* hoặc overflow-y: scroll; */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE, Edge cũ */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge mới */
 }
 
 .hide-scrollbar::-webkit-scrollbar {

@@ -8,5 +8,6 @@ router.use(authMiddleware);
 
 router.post("/send", chatController.postMessage);
 router.get("/history", chatController.fetchHistory);
+router.get("/conversations", chatController.fetchConversations);
 
 export default router;

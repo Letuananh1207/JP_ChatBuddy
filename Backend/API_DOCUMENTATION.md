@@ -1,9 +1,11 @@
 # JP ChatBuddy Backend API Documentation
 
 ## Base URL
+
 - `http://localhost:3000`
 
 ## General Notes
+
 - All requests with a JSON body must include header:
   - `Content-Type: application/json`
 - Protected endpoints require JWT auth:
@@ -14,11 +16,14 @@
 ---
 
 ## Health Check
+
 ### GET `/health`
+
 - Public endpoint.
 - Used to verify the server is running.
 
 #### Response
+
 ```json
 "API is running..."
 ```
@@ -28,10 +33,12 @@
 ## Authentication
 
 ### POST `/api/auth/register`
+
 - Registers a new user.
 - Returns a JWT along with user profile.
 
 #### Request Body
+
 ```json
 {
   "username": "testuser",
@@ -41,6 +48,7 @@
 ```
 
 #### Successful Response
+
 ```json
 {
   "success": true,
@@ -55,15 +63,18 @@
 ```
 
 #### Errors
+
 - `400 Bad Request` if fields are missing or email already exists.
 
 ---
 
 ### POST `/api/auth/login`
+
 - Logs in an existing user.
 - Returns a JWT and user info.
 
 #### Request Body
+
 ```json
 {
   "email": "testuser@example.com",
@@ -72,6 +83,7 @@
 ```
 
 #### Successful Response
+
 ```json
 {
   "success": true,
@@ -85,6 +97,7 @@
 ```
 
 #### Errors
+
 - `400 Bad Request` if fields are missing.
 - `401 Unauthorized` if credentials are invalid.
 
@@ -95,12 +108,14 @@
 All chat routes require `Authorization: Bearer <token>`.
 
 ### POST `/api/chat/send`
+
 - Sends a new message to the AI and stores it in the conversation.
 - If `conversationId` is provided, the message is appended to that conversation.
 - If `newConversation` is `true`, a new conversation is created for the authenticated user.
 - Otherwise, the latest conversation for the user is reused.
 
 #### Request Body
+
 ```json
 {
   "message": "Xin chào",
@@ -109,11 +124,13 @@ All chat routes require `Authorization: Bearer <token>`.
   "newConversation": true
 }
 ```
+
 - `conversationId` is optional.
 - `quote` is optional.
 - `newConversation` is optional; use `true` to create a fresh conversation.
 
 #### Successful Response
+
 ```json
 {
   "conversationId": "...",
@@ -122,24 +139,29 @@ All chat routes require `Authorization: Bearer <token>`.
 ```
 
 #### Errors
+
 - `401 Unauthorized` if JWT is missing or invalid.
 - `500 Internal Server Error` for AI/backend failures.
 
 ---
 
 ### GET `/api/chat/history`
+
 - Returns the latest chat history for the authenticated user.
 - Returns up to 20 most recent messages by default.
 
 #### Query Parameters
+
 - `limit` (optional): number of messages to return.
 
 #### Example
+
 ```http
 GET /api/chat/history?limit=30
 ```
 
 #### Successful Response
+
 ```json
 [
   {
@@ -162,9 +184,11 @@ GET /api/chat/history?limit=30
 All vocabulary routes require `Authorization: Bearer <token>`.
 
 ### POST `/api/vocabulary/add`
+
 - Adds a new vocabulary item for the authenticated user.
 
 #### Request Body
+
 ```json
 {
   "word": "こんにちは",
@@ -173,6 +197,7 @@ All vocabulary routes require `Authorization: Bearer <token>`.
 ```
 
 #### Successful Response
+
 ```json
 {
   "user": "<user-id>",
@@ -187,9 +212,11 @@ All vocabulary routes require `Authorization: Bearer <token>`.
 ---
 
 ### GET `/api/vocabulary/all`
+
 - Returns all vocabulary items belonging to the authenticated user.
 
 #### Successful Response
+
 ```json
 [
   {
@@ -206,14 +233,17 @@ All vocabulary routes require `Authorization: Bearer <token>`.
 ---
 
 ### DELETE `/api/vocabulary/:id`
+
 - Deletes the vocabulary item with the given ID, only if it belongs to the authenticated user.
 
 #### Example
+
 ```http
 DELETE /api/vocabulary/642a1c2f1249a5c4d8e7f123
 ```
 
 #### Successful Response
+
 ```json
 {
   "message": "Xóa thành công",
@@ -226,10 +256,12 @@ DELETE /api/vocabulary/642a1c2f1249a5c4d8e7f123
 ## Grammar
 
 ### POST `/api/grammar/check`
+
 - Checks grammar based on recent user chat messages since 8:00 AM today.
 - This endpoint is currently public and does not require auth.
 
 #### Request Body
+
 ```json
 {
   "missions": [
@@ -240,6 +272,7 @@ DELETE /api/vocabulary/642a1c2f1249a5c4d8e7f123
 ```
 
 #### Successful Response
+
 ```json
 {
   "missions": [
@@ -253,12 +286,14 @@ DELETE /api/vocabulary/642a1c2f1249a5c4d8e7f123
 ---
 
 ## Error Handling
+
 - Missing required fields returns `400 Bad Request`.
 - Invalid credentials returns `401 Unauthorized`.
 - Missing or invalid JWT returns `401 Unauthorized`.
 - Server failures return `500 Internal Server Error`.
 
 ## Notes for Extension Team
+
 - Store the JWT from `/api/auth/login` or `/api/auth/register` and send it on every protected request.
 - For a fresh chat session, send `newConversation: true` in `/api/chat/send`.
 - Chat history is always scoped to the authenticated user.

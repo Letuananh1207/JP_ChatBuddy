@@ -29,9 +29,22 @@ interface CheckResult {
 interface HomeProps {
   quote?: string;
   onDeleteQuote?: () => void;
+  conversationId?: string | null;
+  isNewDraft?: boolean;
+  onConversationCreated?: (id: string) => void;
+  onStartNewConversation?: () => void;
+  onSelectConversation?: (id: string) => void;
 }
 
-const Home: React.FC<HomeProps> = ({ quote, onDeleteQuote }) => {
+const Home: React.FC<HomeProps> = ({
+  quote,
+  onDeleteQuote,
+  conversationId = null,
+  isNewDraft = false,
+  onConversationCreated,
+  onStartNewConversation,
+  onSelectConversation,
+}) => {
   const [speakContent, setSpeakContent] = useState("...");
   const [checkResult, setCheckResult] = useState<CheckResult | null>(null);
   const [hovering, setHovering] = useState(false);
@@ -46,8 +59,12 @@ const Home: React.FC<HomeProps> = ({ quote, onDeleteQuote }) => {
     null
   );
 
-  const { historyQuery, sendMutation } = useChatQuery();
-  const dialogHistory = historyQuery.data || [];
+  const { historyQuery, sendMutation, conversationsQuery } = useChatQuery(
+    conversationId,
+    { isNewDraft },
+  );
+  const dialogHistory = isNewDraft ? [] : historyQuery.data || [];
+  const conversations = conversationsQuery.data || [];
 
   const speech = useSpeechToText({
     onFinalText: (text) => setSpeakContent(text),
@@ -100,16 +117,19 @@ const Home: React.FC<HomeProps> = ({ quote, onDeleteQuote }) => {
     const payload = {
       message: speakContent,
       quote: quote || null,
+      conversationId: conversationId || undefined,
+      newConversation: isNewDraft,
     };
 
     setSpeakContent("...");
     setCheckResult(null);
 
-    // Gửi mutation với object payload đã thống nhất với hook và api service
     sendMutation.mutate(payload, {
-      onSuccess: () => {
+      onSuccess: (data) => {
         setPendingUserMessage(null);
-        // Tự động xóa quote sau khi gửi thành công để giải phóng vùng nhập liệu
+        if (data?.conversationId && onConversationCreated) {
+          onConversationCreated(data.conversationId);
+        }
         if (quote && onDeleteQuote) {
           onDeleteQuote();
         }
@@ -124,12 +144,47 @@ const Home: React.FC<HomeProps> = ({ quote, onDeleteQuote }) => {
 
   return (
     <div className="relative flex flex-col gap-2 items-stretch flex-1 pt-2 h-full pr-2">
-      {/* Danh sách bong bóng chat */}
+      <div className="flex items-center gap-1 overflow-x-auto hide-scrollbar shrink-0 pb-0.5">
+        <button
+          type="button"
+          onClick={onStartNewConversation}
+          title="Phiên trò chuyện mới"
+          className={`shrink-0 text-[9px] px-1.5 py-0.5 border rounded cursor-pointer transition-all ${
+            isNewDraft
+              ? "bg-gray-500 text-white border-gray-600"
+              : "bg-white text-gray-600 border-gray-300 hover:bg-gray-500 hover:text-white"
+          }`}
+        >
+          + Mới
+        </button>
+        {conversations.map((conv) => {
+          const isActive =
+            !isNewDraft &&
+            (conversationId === conv.id ||
+              (!conversationId && conversations[0]?.id === conv.id));
+          return (
+            <button
+              key={conv.id}
+              type="button"
+              onClick={() => onSelectConversation?.(conv.id)}
+              title={conv.preview}
+              className={`shrink-0 max-w-[72px] truncate text-[9px] px-1.5 py-0.5 border rounded cursor-pointer transition-all ${
+                isActive
+                  ? "bg-gray-500 text-white border-gray-600"
+                  : "bg-white text-gray-600 border-gray-300 hover:bg-gray-500 hover:text-white"
+              }`}
+            >
+              {conv.preview}
+            </button>
+          );
+        })}
+      </div>
+
       <div
         className="flex flex-1 flex-col gap-4 overflow-auto hide-scrollbar pb-4 mt-1"
         ref={containerRef}
       >
-        {historyQuery.isLoading ? (
+        {historyQuery.isLoading && !isNewDraft ? (
           <div className="flex justify-center items-center h-full text-gray-400 text-xs">
             <Loader2 className="animate-spin mr-2" size={14} />
             Konny đang lục lại trí nhớ...

@@ -25,9 +25,26 @@ const ChatBot: React.FC = () => {
   const [word, setWord] = useState("");
   const [meaning, setMeaning] = useState("");
   const [quote, setQuote] = useState("");
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [isNewDraft, setIsNewDraft] = useState(false);
 
   // Trạng thái chờ phản hồi từ API
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleStartNewConversation = () => {
+    setConversationId(null);
+    setIsNewDraft(true);
+  };
+
+  const handleSelectConversation = (id: string) => {
+    setConversationId(id);
+    setIsNewDraft(false);
+  };
+
+  const handleConversationCreated = (id: string) => {
+    setConversationId(id);
+    setIsNewDraft(false);
+  };
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -87,7 +104,17 @@ const ChatBot: React.FC = () => {
   const tabMap: Record<TabKey, { name: string; component: JSX.Element }> = {
     home: {
       name: "Home",
-      component: <Home quote={quote} onDeleteQuote={() => setQuote("")} />,
+      component: (
+        <Home
+          quote={quote}
+          onDeleteQuote={() => setQuote("")}
+          conversationId={conversationId}
+          isNewDraft={isNewDraft}
+          onStartNewConversation={handleStartNewConversation}
+          onSelectConversation={handleSelectConversation}
+          onConversationCreated={handleConversationCreated}
+        />
+      ),
     },
     check: { name: "Nhiệm vụ", component: <CheckTab /> },
     game: {
@@ -111,6 +138,7 @@ const ChatBot: React.FC = () => {
             <Mic
               size={32}
               className="cursor-pointer rounded-full p-1 bg-gray-500 text-white hover:bg-gray-600"
+              onClick={handleStartNewConversation}
             />
             <CheckSquare
               size={32}
