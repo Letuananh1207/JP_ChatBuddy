@@ -1,7 +1,7 @@
 // src/controllers/chatController.ts
 import { Request, Response } from "express";
 import * as chatService from "../services/chatService";
-
+import * as messageDayService from "../services/messageDayService";
 interface AuthRequest extends Request {
   user?: { id: string };
 }
@@ -15,13 +15,6 @@ export const postMessage = async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    console.log(">>> Incoming Request:", {
-      conversationId,
-      message,
-      quote,
-      userId,
-    });
-
     const newConversation = Boolean(req.body.newConversation);
     const result = await chatService.chatWithAI(
       conversationId,
@@ -31,12 +24,12 @@ export const postMessage = async (req: AuthRequest, res: Response) => {
       newConversation,
     );
 
+    // Ghi log vào MessageDay
+    await messageDayService.appendMessage(userId, message, false);
+
     res.status(200).json(result);
   } catch (error: any) {
-    console.error("[DEBUG] Chat Error Details:");
-    console.error("- Message:", error.message);
-    console.error("- Stack:", error.stack);
-
+    console.error("[DEBUG] Chat Error Details:", error.message);
     res.status(500).json({
       error: "Internal Server Error",
       detail: error.message,
@@ -55,11 +48,7 @@ export const fetchHistory = async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const history = await chatService.getHistory(
-      limit,
-      userId,
-      conversationId,
-    );
+    const history = await chatService.getHistory(limit, userId, conversationId);
 
     res.status(200).json(history);
   } catch (error: any) {

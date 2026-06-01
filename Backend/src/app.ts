@@ -10,7 +10,7 @@ import vocabularyRoutes from "./routes/vocabularyRoutes";
 import chatRoutes from "./routes/chatRoutes";
 import grammarRoutes from "./routes/grammarRoutes";
 import authRoutes from "./routes/authRoutes";
-
+import messageDayRoutes from "./routes/mesageDayRoutes";
 const app: Application = express();
 
 // --- 1. Kết nối Database ---
@@ -41,5 +41,6 @@ app.use("/api/vocabulary", vocabularyRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/grammar", grammarRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/message-day", messageDayRoutes);
 
 export default app;

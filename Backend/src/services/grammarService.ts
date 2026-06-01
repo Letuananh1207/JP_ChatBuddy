@@ -3,7 +3,7 @@ import { groq, GROQ_MODEL } from "../config/groq";
 
 export async function checkGrammarService(
   userContents: string[],
-  missions: any[]
+  missions: any[],
 ) {
   // 1. Chỉ lọc ra những ngữ pháp chưa hoàn thành để tiết kiệm Token và tăng độ chính xác
   const pendingMissions = missions.filter((m) => !m.status);
@@ -22,7 +22,7 @@ export async function checkGrammarService(
           id: m.id,
           name: m.name,
           meaning: m.meaning,
-        }))
+        })),
       )}
       
       Nhiệm vụ:

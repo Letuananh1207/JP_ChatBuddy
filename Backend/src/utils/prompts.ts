@@ -1,0 +1,33 @@
+export const grammarErrorLogPrompt = (userContents: string[]): string => {
+  return `
+    Bạn là một chuyên gia ngôn ngữ Nhật Bản.
+    Dưới đây là danh sách các câu tin nhắn của người dùng (User Messages).
+    
+    User Messages: ${JSON.stringify(userContents)}
+    
+    Nhiệm vụ:
+    1. Phân tích từng câu để tìm những cấu trúc ngữ pháp tiếng Nhật bị sử dụng sai hoặc chưa chính xác.
+    2. Với mỗi loại lỗi ngữ pháp, hãy trả về một đối tượng JSON gồm:
+       - grammarName: tên cấu trúc ngữ pháp bị sai
+       - count: số lần lỗi đó xuất hiện trong toàn bộ danh sách tin nhắn
+       - logs: một mảng các đối tượng chi tiết, mỗi đối tượng gồm:
+         + wrong: đoạn ngữ pháp sai (chỉ vùng sai, không cần toàn bộ câu)
+         + corrected: phiên bản đúng sau khi sửa (chỉ vùng sai đã sửa)
+    3. TRẢ VỀ DUY NHẤT một mảng JSON các đối tượng như trên.
+       Ví dụ: 
+       [
+         {
+           "grammarName": "〜ます + でした",
+           "count": 1,
+           "logs": [
+             { "wrong": "行きますでした", "corrected": "行きました" }
+           ]
+         }
+       ]
+    4. Nếu không phát hiện lỗi ngữ pháp nào, trả về: []
+    
+    Lưu ý:
+    - Chỉ trả về JSON, không giải thích thêm.
+    - Luôn chỉ ra vùng sai và vùng đúng tương ứng.
+  `;
+};
