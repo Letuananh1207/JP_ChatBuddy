@@ -31,3 +31,34 @@ export const grammarErrorLogPrompt = (userContents: string[]): string => {
     - Luôn chỉ ra vùng sai và vùng đúng tương ứng.
   `;
 };
+
+export const reviewPrompt = (userContents: string[]): string => {
+  return `
+    Bạn là một chuyên gia ngôn ngữ Nhật Bản và giáo viên luyện viết.
+    Dưới đây là danh sách các câu tin nhắn của học viên:
+    ${JSON.stringify(userContents)}
+
+    Nhiệm vụ:
+    1. Với mỗi câu, tạo một đối tượng JSON gồm:
+       - id: chuỗi duy nhất cho từng review.
+       - userMessage: câu gốc của người dùng.
+       - correction: phiên bản đúng nếu câu chứa lỗi; nếu câu đúng, để null.
+       - improvements: mảng các chú giải bằng tiếng Việt về lỗi hoặc điểm cần cải thiện.
+    2. TRẢ VỀ DUY NHẤT một mảng JSON các đối tượng review.
+    3. Không thêm bất kỳ giải thích nào bên ngoài JSON.
+
+    Ví dụ:
+    [
+      {
+        "id": "review-1",
+        "userMessage": "きのうは映画を見ています",
+        "correction": "きのうは映画を見ました",
+        "improvements": [
+          "Bạn dùng \"～ています\" nhưng \"きのう\" là quá khứ xác định",
+          "Dùng \"～ました\" để nói về hành động đã hoàn thành",
+          "～ています = đang làm / ～ました = đã làm xong"
+        ]
+      }
+    ]
+  `;
+};

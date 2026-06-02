@@ -22,12 +22,12 @@ export const updateSummary = async (req: AuthRequest, res: Response) => {
     }
 
     // đảm bảo dateParam là string
-    const doc = await messageDayService.analyzeAndUpdateSummary(
+    const grammarResults = await messageDayService.analyzeAndUpdateSummary(
       userId,
       String(dateParam),
     );
 
-    res.status(200).json(doc);
+    res.status(200).json({ success: true, data: grammarResults });
   } catch (error: any) {
     res.status(500).json({
       error: "Failed to update summary",

@@ -25,7 +25,7 @@ export const postMessage = async (req: AuthRequest, res: Response) => {
     );
 
     // Ghi log vào MessageDay
-    await messageDayService.appendMessage(userId, message, false);
+    await messageDayService.appendMessage(userId, message);
 
     res.status(200).json(result);
   } catch (error: any) {

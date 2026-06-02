@@ -2,6 +2,7 @@
 import { Request, Response } from "express";
 import Conversation from "../models/chatModel";
 import { checkGrammarService } from "../services/grammarService";
+import { getVietnamTodayAt } from "../utils/vietnamTime";
 
 export async function checkGrammar(req: Request, res: Response) {
   try {
@@ -11,9 +12,8 @@ export async function checkGrammar(req: Request, res: Response) {
       return res.status(400).json({ error: "Missions array is required" });
     }
 
-    // 1. Xác định mốc 8h sáng hôm nay
-    const today8AM = new Date();
-    today8AM.setHours(8, 0, 0, 0);
+    // 1. Xác định mốc 8h sáng hôm nay theo giờ Việt Nam
+    const today8AM = getVietnamTodayAt(8);
 
     // Tìm hội thoại có cập nhật sau 8h sáng
     const conversation = await Conversation.findOne({
@@ -30,7 +30,7 @@ export async function checkGrammar(req: Request, res: Response) {
     // 2. Lọc tin nhắn của 'user' và CHỈ lấy những tin nhắn gửi sau 8h sáng
     const userContents = conversation.messages
       .filter(
-        (m: any) => m.role === "user" && new Date(m.timestamp) >= today8AM,
+        (m: any) => new Date(m.timestamp) >= today8AM && m.role === "user",
       )
       .map((m: any) => m.content);
 

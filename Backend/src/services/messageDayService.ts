@@ -4,57 +4,50 @@ import { Types } from "mongoose";
 import { groq, GROQ_MODEL } from "../config/groq";
 import { IGrammarSummary } from "../models/messageDayModel";
 import { grammarErrorLogPrompt } from "../utils/prompts";
+import { getVietnamDateKey, parseVietnamDateKey } from "../utils/vietnamTime";
 
-export const appendMessage = async (
-  userId: string,
-  content: string,
-  isAnalyzed = false,
-) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0); // normalize về đầu ngày
+export const appendMessage = async (userId: string, content: string) => {
+  const todayVN = getVietnamDateKey();
 
   let doc = await MessageDay.findOne({
     userId: new Types.ObjectId(userId),
-    date: today,
+    dateVN: todayVN,
   });
 
   if (!doc) {
     doc = new MessageDay({
       userId,
-      date: today,
-      messages: [{ content, isAnalyzed }],
+      dateVN: todayVN,
+      messages: [{ content }],
     });
   } else {
-    doc.messages.push({ content, isAnalyzed });
+    doc.messages.push({ content });
   }
 
   await doc.save();
   return doc;
 };
 
-export const analyzeAndUpdateSummary = async (userId: string, date: string) => {
-  const targetDate = new Date(date);
-  targetDate.setHours(0, 0, 0, 0);
+export const analyzeAndUpdateSummary = async (
+  userId: string,
+  date: string,
+): Promise<IGrammarSummary[]> => {
+  const dateVN = parseVietnamDateKey(date);
 
-  const doc = await MessageDay.findOne({ userId, date: targetDate });
+  const doc = await MessageDay.findOne({
+    userId: new Types.ObjectId(userId),
+    dateVN,
+  });
   if (!doc) throw new Error("No messages found for this date");
 
-  const unAnalyzed = doc.messages.filter((m) => !m.isAnalyzed);
-  if (unAnalyzed.length === 0) return doc;
+  if (doc.messages.length === 0) return [];
 
   // gọi AI
-  const grammarResults = await analyzeGrammar(unAnalyzed.map((m) => m.content));
+  const grammarResults = await analyzeGrammar(
+    doc.messages.map((m) => m.content),
+  );
 
-  // append vào summary
-  doc.summary.push(...grammarResults);
-
-  // đánh dấu các message đã phân tích
-  doc.messages.forEach((m) => {
-    if (!m.isAnalyzed) m.isAnalyzed = true;
-  });
-
-  await doc.save();
-  return doc;
+  return grammarResults;
 };
 
 export async function analyzeGrammar(
