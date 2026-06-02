@@ -13,3 +13,10 @@ if (!GEMINI_API_KEY) {
   console.error("Missing GEMINI_API_KEY in env");
   process.exit(1);
 }
+
+export const YOUTUBE_API_KEY: string = (() => {
+  if (!process.env.YOUTUBE_API_KEY) {
+    throw new Error("❌ YOUTUBE_API_KEY is not defined");
+  }
+  return process.env.YOUTUBE_API_KEY;
+})();

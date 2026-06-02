@@ -71,3 +71,58 @@ export const reviewPrompt = (userContents: string[]): string => {
     }
   `;
 };
+
+export const recommendedLessonPrompt = (summary: string[]): string => {
+  return `
+    Bạn là giáo viên tiếng Nhật và chuyên gia xây dựng lộ trình học.
+
+    Dưới đây là các nhận xét của giáo viên về học viên:
+    ${JSON.stringify(summary)}
+
+    Nhiệm vụ:
+
+    Bước 1:
+    Phân tích từng nhận xét và xác định các chủ đề học tiếng Nhật cần cải thiện.
+    Ví dụ:
+    - Từ vựng không phù hợp ngữ cảnh → vocabulary usage, word nuance, collocation
+    - Câu hỏi chưa rõ ràng → question patterns, interrogative grammar
+    - Câu quá dài hoặc phức tạp → basic grammar, natural sentence building
+
+    Bước 2:
+    Tìm các video YouTube DẠY TIẾNG NHẬT thực sự liên quan đến các chủ đề trên.
+
+    Yêu cầu bắt buộc:
+    - Chỉ chọn video học tiếng Nhật.
+    - Không chọn vlog, podcast, anime clip, shorts, nhạc hoặc nội dung giải trí.
+    - Ưu tiên các kênh học tiếng Nhật nổi tiếng.
+    - Mỗi video phải liên quan trực tiếp tới ít nhất một lỗi trong summary.
+    - Chỉ trả về video YouTube thực sự tồn tại.
+    - Không được tự tạo URL.
+    - Trả về từ 3 đến 5 video.
+
+    Kết quả:
+    Chỉ trả về JSON array chứa URL YouTube.
+
+    Ví dụ:
+    [
+      "https://www.youtube.com/watch?v=xxxxx",
+      "https://www.youtube.com/watch?v=yyyyy",
+      "https://www.youtube.com/watch?v=zzzzz"
+    ]
+    `;
+};
+
+export const recommendedLessonKeywordPrompt = (summary: string[]): string => {
+  return `
+      Bạn là giáo viên tiếng Nhật và chuyên gia đề xuất học liệu.
+
+      Dưới đây là các điểm cần cải thiện của học viên:
+      ${JSON.stringify(summary)}
+
+      Nhiệm vụ:
+      1. Dựa trên các điểm trong summary, sinh ra một mảng từ khoá tìm kiếm ngắn (mỗi từ khoá 2-5 từ) phù hợp để tìm video YouTube dạy tiếng Nhật có liên quan.
+      2. Trả về DUY NHẤT một mảng JSON chứa các từ khoá. Ví dụ:
+         ["past tense Japanese grammar", "particle usage Japanese", "polite form ました vs ます"]
+      3. Không thêm bất kỳ giải thích nào khác ngoài mảng JSON.
+    `;
+};
