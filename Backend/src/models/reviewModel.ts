@@ -12,6 +12,7 @@ export interface IReview extends Document {
   date: Date;
   dateVN: string;
   reviews: IReviewItem[];
+  summary: string[];
 }
 
 const ReviewItemSchema: Schema = new Schema(
@@ -30,6 +31,7 @@ const ReviewSchema: Schema = new Schema(
     date: { type: Date, required: true },
     dateVN: { type: String, required: true },
     reviews: { type: [ReviewItemSchema], default: [] },
+    summary: { type: [String], default: [] },
   },
   { timestamps: true },
 );

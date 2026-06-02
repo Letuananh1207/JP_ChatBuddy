@@ -9,6 +9,11 @@ import {
   parseVietnamDateKey,
 } from "../utils/vietnamTime";
 
+interface IReviewAnalysisResult {
+  reviews: IReviewItem[];
+  summary: string[];
+}
+
 export async function generateReviewForDate(
   userId: string,
   date: string,
@@ -29,16 +34,20 @@ export async function generateReviewForDate(
     throw new Error("No user messages available for this date");
   }
 
-  const reviews = await analyzeReview(
+  const analysis = await analyzeReview(
     messageDay.messages.map((message) => message.content),
   );
 
-  const normalizedReviews = reviews.map((review, index) => ({
+  const normalizedReviews = analysis.reviews.map((review) => ({
     id: review.id?.trim() || new Types.ObjectId().toHexString(),
     userMessage: review.userMessage,
     correction: review.correction ? review.correction : null,
     improvements: Array.isArray(review.improvements) ? review.improvements : [],
   }));
+
+  const normalizedSummary = Array.isArray(analysis.summary)
+    ? analysis.summary.map((item) => String(item))
+    : [];
 
   const updatedReview = await Review.findOneAndUpdate(
     { userId: new Types.ObjectId(userId), dateVN },
@@ -47,6 +56,7 @@ export async function generateReviewForDate(
       date: targetDate,
       dateVN,
       reviews: normalizedReviews,
+      summary: normalizedSummary,
     },
     { upsert: true, new: true, setDefaultsOnInsert: true },
   );
@@ -67,7 +77,7 @@ export async function getReviewForDate(userId: string, date: string) {
 
 export async function analyzeReview(
   userContents: string[],
-): Promise<IReviewItem[]> {
+): Promise<IReviewAnalysisResult> {
   try {
     const prompt = reviewPrompt(userContents);
     const completion = await groq.chat.completions.create({
@@ -75,7 +85,7 @@ export async function analyzeReview(
         {
           role: "system",
           content:
-            "You are a Japanese language teaching assistant. Return only JSON arrays.",
+            "You are a Japanese language teaching assistant. Return only JSON.",
         },
         {
           role: "user",
@@ -87,23 +97,33 @@ export async function analyzeReview(
       max_tokens: 700,
     });
 
-    const responseText = completion.choices[0]?.message?.content || "[]";
-    const match = responseText.match(/\[[\s\S]*\]/);
-    const reviewResults: IReviewItem[] = match ? JSON.parse(match[0]) : [];
+    const responseText = completion.choices[0]?.message?.content || "{}";
+    const match = responseText.match(/\{[\s\S]*\}/);
+    const parsed = match ? JSON.parse(match[0]) : { reviews: [], summary: [] };
 
-    return reviewResults.map((item) => ({
-      id: item.id?.toString?.() || new Types.ObjectId().toHexString(),
-      userMessage: String(item.userMessage || ""),
-      correction:
-        item.correction === undefined || item.correction === null
-          ? null
-          : String(item.correction),
-      improvements: Array.isArray(item.improvements)
-        ? item.improvements.map((improvement) => String(improvement))
-        : [],
-    }));
+    const reviewResults: IReviewItem[] = Array.isArray(parsed.reviews)
+      ? parsed.reviews
+      : [];
+    const summaryResults: string[] = Array.isArray(parsed.summary)
+      ? parsed.summary.map((item) => String(item))
+      : [];
+
+    return {
+      reviews: reviewResults.map((item) => ({
+        id: item.id?.toString?.() || new Types.ObjectId().toHexString(),
+        userMessage: String(item.userMessage || ""),
+        correction:
+          item.correction === undefined || item.correction === null
+            ? null
+            : String(item.correction),
+        improvements: Array.isArray(item.improvements)
+          ? item.improvements.map((improvement) => String(improvement))
+          : [],
+      })),
+      summary: summaryResults,
+    };
   } catch (error: any) {
     console.error("❌ Groq Review Analyze Error:", error.message);
-    return [];
+    return { reviews: [], summary: [] };
   }
 }

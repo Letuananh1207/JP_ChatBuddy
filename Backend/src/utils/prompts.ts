@@ -44,21 +44,30 @@ export const reviewPrompt = (userContents: string[]): string => {
        - userMessage: câu gốc của người dùng.
        - correction: phiên bản đúng nếu câu chứa lỗi; nếu câu đúng, để null.
        - improvements: mảng các chú giải bằng tiếng Việt về lỗi hoặc điểm cần cải thiện.
-    2. TRẢ VỀ DUY NHẤT một mảng JSON các đối tượng review.
-    3. Không thêm bất kỳ giải thích nào bên ngoài JSON.
+    2. Tạo thêm một trường "summary" là mảng 3 lời nhận xét tổng quát về cách cải thiện hoặc sửa lỗi,
+       mỗi phần tử nên là một gợi ý ngắn gọn, rõ ràng và hữu ích.
+    3. TRẢ VỀ DUY NHẤT một đối tượng JSON chứa 2 trường: "reviews" và "summary".
+    4. Không thêm bất kỳ giải thích nào bên ngoài JSON.
 
     Ví dụ:
-    [
-      {
-        "id": "review-1",
-        "userMessage": "きのうは映画を見ています",
-        "correction": "きのうは映画を見ました",
-        "improvements": [
-          "Bạn dùng \"～ています\" nhưng \"きのう\" là quá khứ xác định",
-          "Dùng \"～ました\" để nói về hành động đã hoàn thành",
-          "～ています = đang làm / ～ました = đã làm xong"
-        ]
-      }
-    ]
+    {
+      "reviews": [
+        {
+          "id": "review-1",
+          "userMessage": "きのうは映画を見ています",
+          "correction": "きのうは映画を見ました",
+          "improvements": [
+            "Bạn dùng \"～ています\" nhưng \"きのう\" là quá khứ xác định",
+            "Dùng \"～ました\" để nói về hành động đã hoàn thành",
+            "～ています = đang làm / ～ました = đã làm xong"
+          ]
+        }
+      ],
+      "summary": [
+        "Chú ý dùng đúng thì quá khứ khi nhắc lại sự việc đã xảy ra.",
+        "Kiểm tra cách dùng trợ từ và cấu trúc câu để tránh sai ngữ pháp.",
+        "Giữ câu ngắn gọn và chính xác, tránh dùng biểu thức quá phức tạp nếu chưa chắc chắn."
+      ]
+    }
   `;
 };
