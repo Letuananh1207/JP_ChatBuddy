@@ -99,13 +99,15 @@ export async function analyzeReview(
 
     const responseText = completion.choices[0]?.message?.content || "{}";
     const match = responseText.match(/\{[\s\S]*\}/);
-    const parsed = match ? JSON.parse(match[0]) : { reviews: [], summary: [] };
+    const parsed: any = match
+      ? JSON.parse(match[0])
+      : { reviews: [], summary: [] };
 
     const reviewResults: IReviewItem[] = Array.isArray(parsed.reviews)
       ? parsed.reviews
       : [];
     const summaryResults: string[] = Array.isArray(parsed.summary)
-      ? parsed.summary.map((item) => String(item))
+      ? parsed.summary.map((item: any) => String(item))
       : [];
 
     return {

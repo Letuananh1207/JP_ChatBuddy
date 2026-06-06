@@ -19,7 +19,8 @@ connectDB();
 // --- 2. Middlewares ---
 app.use(cors());
 // Giới hạn dung lượng payload để tránh tấn công DOS
-app.use(bodyParser.json({ limit: "50kb" }));
+// Tăng giới hạn payload để hỗ trợ image/audio data (nếu gửi base64)
+app.use(bodyParser.json({ limit: "5mb" }));
 
 // Cấu hình giới hạn số lượng request
 const limiter = rateLimit({
@@ -42,5 +43,7 @@ app.use("/api/chat", chatRoutes);
 app.use("/api/grammar", grammarRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/message-day", messageDayRoutes);
+import postRoutes from "./routes/postRoutes";
+app.use("/api/posts", postRoutes);
 
 export default app;
