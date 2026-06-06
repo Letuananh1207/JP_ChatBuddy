@@ -8,8 +8,15 @@ import {
 } from "../utils/prompts";
 import { parseVietnamDate, parseVietnamDateKey } from "../utils/vietnamTime";
 
-interface IRecommendedLessonResult {
-  links: string[];
+interface IRecommendedLessonVideo {
+  videoId: string;
+  url: string;
+  embedUrl: string;
+  thumbnailUrl: string;
+  title: string;
+  description: string;
+  channelTitle: string;
+  publishedAt: string;
 }
 
 export async function generateRecommendedLessonsForDate(
@@ -32,9 +39,23 @@ export async function generateRecommendedLessonsForDate(
     throw new Error("No summary available to generate recommended lessons");
   }
 
-  const links = await analyzeRecommendedLessons(review.summary);
-  const normalizedLinks = Array.isArray(links)
-    ? links.map((link) => String(link).trim()).filter((link) => link.length > 0)
+  const videos = await analyzeRecommendedLessons(review.summary);
+  const normalizedVideos = Array.isArray(videos)
+    ? videos
+        .filter(
+          (video) =>
+            video.videoId && video.url && video.thumbnailUrl && video.embedUrl,
+        )
+        .map((video) => ({
+          videoId: String(video.videoId),
+          url: String(video.url),
+          embedUrl: String(video.embedUrl),
+          thumbnailUrl: String(video.thumbnailUrl),
+          title: String(video.title),
+          description: String(video.description),
+          channelTitle: String(video.channelTitle),
+          publishedAt: new Date(video.publishedAt),
+        }))
     : [];
 
   const updatedLesson = await RecommendedLesson.findOneAndUpdate(
@@ -43,7 +64,7 @@ export async function generateRecommendedLessonsForDate(
       id: new Types.ObjectId().toHexString(),
       userId,
       dateVN,
-      links: normalizedLinks,
+      videos: normalizedVideos,
     },
     { upsert: true, new: true, setDefaultsOnInsert: true },
   );
@@ -67,7 +88,7 @@ export async function getRecommendedLessonsForDate(
 
 export async function analyzeRecommendedLessons(
   summary: string[],
-): Promise<string[]> {
+): Promise<IRecommendedLessonVideo[]> {
   try {
     // Step 1: Ask LLM to generate concise search keywords based on summary
     const keywordPrompt = recommendedLessonKeywordPrompt(summary);
@@ -100,10 +121,10 @@ export async function analyzeRecommendedLessons(
     const { YOUTUBE_API_KEY } = await import("../config/env");
     const https = await import("node:https");
 
-    const collected = new Set<string>();
+    const collected = new Map<string, IRecommendedLessonVideo>();
 
     const fetchForKeyword = (keyword: string, maxResults = 3) => {
-      return new Promise<string[]>((resolve) => {
+      return new Promise<IRecommendedLessonVideo[]>((resolve) => {
         try {
           const q = encodeURIComponent(keyword);
           const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=${maxResults}&q=${q}&key=${YOUTUBE_API_KEY}`;
@@ -114,14 +135,32 @@ export async function analyzeRecommendedLessons(
               try {
                 const parsed = JSON.parse(data);
                 const items = Array.isArray(parsed.items) ? parsed.items : [];
-                const links = items
-                  .map((it: any) =>
-                    it.id && it.id.videoId
-                      ? `https://www.youtube.com/watch?v=${it.id.videoId}`
-                      : null,
-                  )
-                  .filter(Boolean) as string[];
-                resolve(links);
+                const videos = items
+                  .map((it: any) => {
+                    if (!it.id || !it.id.videoId || !it.snippet) {
+                      return null;
+                    }
+                    const videoId = String(it.id.videoId);
+                    const snippet = it.snippet;
+                    const thumbnailUrl =
+                      snippet.thumbnails?.medium?.url ||
+                      snippet.thumbnails?.default?.url ||
+                      "";
+                    return {
+                      videoId,
+                      url: `https://www.youtube.com/watch?v=${videoId}`,
+                      embedUrl: `https://www.youtube.com/embed/${videoId}`,
+                      thumbnailUrl,
+                      title: String(snippet.title || ""),
+                      description: String(snippet.description || ""),
+                      channelTitle: String(snippet.channelTitle || ""),
+                      publishedAt: String(
+                        snippet.publishedAt || new Date().toISOString(),
+                      ),
+                    };
+                  })
+                  .filter(Boolean) as IRecommendedLessonVideo[];
+                resolve(videos);
               } catch (e) {
                 resolve([]);
               }
@@ -136,14 +175,14 @@ export async function analyzeRecommendedLessons(
 
     for (const kw of keywords) {
       if (collected.size >= 5) break; // stop when we have enough
-      const links = await fetchForKeyword(kw, 3);
-      for (const l of links) {
+      const videos = await fetchForKeyword(kw, 3);
+      for (const video of videos) {
         if (collected.size >= 5) break;
-        collected.add(l);
+        collected.set(video.videoId, video);
       }
     }
 
-    return Array.from(collected);
+    return Array.from(collected.values()).slice(0, 5);
   } catch (error: any) {
     console.error("❌ Groq Recommended Lessons Error:", error.message);
     return [];
