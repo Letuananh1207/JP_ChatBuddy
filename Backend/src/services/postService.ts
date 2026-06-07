@@ -18,13 +18,16 @@ export const createPost = async (
 export const getPosts = async (limit = 20, skip = 0) => {
   return await Post.find()
     .populate("author", "username email")
+    .populate("comments.user", "username email")
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit);
 };
 
 export const getPostById = async (postId: string) => {
-  return await Post.findById(postId).populate("author", "username email");
+  return await Post.findById(postId)
+    .populate("author", "username email")
+    .populate("comments.user", "username email");
 };
 
 export const toggleLike = async (postId: string, userId: string) => {
