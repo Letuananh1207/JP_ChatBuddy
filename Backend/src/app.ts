@@ -11,6 +11,8 @@ import chatRoutes from "./routes/chatRoutes";
 import grammarRoutes from "./routes/grammarRoutes";
 import authRoutes from "./routes/authRoutes";
 import messageDayRoutes from "./routes/mesageDayRoutes";
+import postRoutes from "./routes/postRoutes";
+import arenaRoutes from "./routes/arenaRoutes";
 const app: Application = express();
 
 // --- 1. Kết nối Database ---
@@ -43,7 +45,7 @@ app.use("/api/chat", chatRoutes);
 app.use("/api/grammar", grammarRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/message-day", messageDayRoutes);
-import postRoutes from "./routes/postRoutes";
 app.use("/api/posts", postRoutes);
+app.use("/api/arena", arenaRoutes);
 
 export default app;
