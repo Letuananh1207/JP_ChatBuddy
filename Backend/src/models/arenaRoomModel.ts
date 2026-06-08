@@ -15,6 +15,7 @@ export interface IParticipant {
   answers: IAnswer[];
   correctCount: number;
   totalTime: number;
+  finished: boolean;
 }
 
 export interface IQuestion {
@@ -53,6 +54,7 @@ const ParticipantSchema: Schema = new Schema(
     answers: { type: [AnswerSchema], default: [] },
     correctCount: { type: Number, default: 0 },
     totalTime: { type: Number, default: 0 },
+    finished: { type: Boolean, default: false },
   },
   { _id: false },
 );

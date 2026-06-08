@@ -182,7 +182,7 @@ Lấy thông tin chi tiết phòng, bao gồm host, danh sách participants và 
 
 ---
 
-### 6. Gửi câu trả lời
+### 6. Gửi kết quả trận đấu
 
 - Method: `POST`
 - URL: `/api/arena/rooms/:code/answer`
@@ -190,13 +190,27 @@ Lấy thông tin chi tiết phòng, bao gồm host, danh sách participants và 
 
 #### Mô tả
 
-Gửi câu trả lời của người chơi cho một câu hỏi trong phòng đang chạy.
+Gửi kết quả của người chơi cho phòng đang chạy. Endpoint hỗ trợ 2 dạng payload:
+
+- gửi điểm tổng và thời gian khi người chơi hoàn thành toàn bộ bài
+- hoặc gửi từng đáp án nếu cần gửi từng câu hỏi
 
 #### Path parameters
 
 - `code` - mã phòng Arena.
 
 #### Body
+
+Một trong hai định dạng sau:
+
+```json
+{
+  "score": 7,
+  "duration": 120
+}
+```
+
+hoặc:
 
 ```json
 {
@@ -213,10 +227,10 @@ Gửi câu trả lời của người chơi cho một câu hỏi trong phòng đ
 
 #### Lỗi
 
-- `400` nếu thiếu `questionIndex`, `answer`, hoặc `duration` không hợp lệ.
+- `400` nếu thiếu payload hợp lệ.
 - `401` nếu không có token hợp lệ.
 - `404` nếu phòng không tồn tại hoặc không đang chạy.
-- `500` nếu gửi câu trả lời thất bại.
+- `500` nếu gửi kết quả thất bại.
 
 ---
 

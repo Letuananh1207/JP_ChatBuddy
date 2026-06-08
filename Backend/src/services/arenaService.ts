@@ -68,6 +68,7 @@ export const createRoom = async (hostId: string) => {
         answers: [],
         correctCount: 0,
         totalTime: 0,
+        finished: false,
       },
     ],
     status: "waiting",
@@ -98,6 +99,7 @@ export const joinRoom = async (code: string, userId: string) => {
     answers: [],
     correctCount: 0,
     totalTime: 0,
+    finished: false,
   });
 
   return await room.save();
@@ -179,6 +181,43 @@ export const setParticipantReady = async (
   return room;
 };
 
+const isParticipantFinished = (
+  participant: IParticipant,
+  questionCount: number,
+) => {
+  return participant.finished || participant.answers.length >= questionCount;
+};
+
+export const submitResult = async (
+  code: string,
+  userId: string,
+  score: number,
+  duration: number,
+) => {
+  const room = await ArenaRoom.findOne({ code });
+  if (!room || room.status !== "running") return null;
+
+  const participant = room.participants.find(
+    (p: IParticipant) => String(p.user) === userId,
+  );
+  if (!participant) return null;
+
+  participant.correctCount = score;
+  participant.totalTime = duration;
+  participant.finished = true;
+
+  const allDone = room.participants.every((p: IParticipant) =>
+    isParticipantFinished(p, room.questions.length),
+  );
+
+  if (allDone) {
+    room.status = "finished";
+  }
+
+  await room.save();
+  return room;
+};
+
 export const submitAnswer = async (
   code: string,
   userId: string,
@@ -219,8 +258,13 @@ export const submitAnswer = async (
   if (correct) participant.correctCount += 1;
   participant.totalTime += duration;
 
-  const allDone = room.participants.every(
-    (p: IParticipant) => p.answers.length >= room.questions.length,
+  participant.finished = isParticipantFinished(
+    participant,
+    room.questions.length,
+  );
+
+  const allDone = room.participants.every((p: IParticipant) =>
+    isParticipantFinished(p, room.questions.length),
   );
 
   if (allDone) {

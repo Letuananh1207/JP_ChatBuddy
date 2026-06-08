@@ -55,14 +55,29 @@ export default function arenaSocket(io: Server) {
 
     socket.on(
       "arena:answer",
-      async ({ code, questionIndex, answer, duration }) => {
-        const room = await arenaService.submitAnswer(
-          code,
-          userId,
-          questionIndex,
-          answer,
-          duration,
-        );
+      async ({ code, questionIndex, answer, duration, score }) => {
+        let room;
+        if (typeof score === "number" && typeof duration === "number") {
+          room = await arenaService.submitResult(code, userId, score, duration);
+        } else if (
+          typeof questionIndex === "number" &&
+          typeof answer === "string" &&
+          typeof duration === "number"
+        ) {
+          room = await arenaService.submitAnswer(
+            code,
+            userId,
+            questionIndex,
+            answer,
+            duration,
+          );
+        } else {
+          return socket.emit("arena:error", {
+            message:
+              "Provide either score and duration, or questionIndex, answer and duration",
+          });
+        }
+
         if (!room) {
           return socket.emit("arena:error", {
             message: "Unable to submit answer",

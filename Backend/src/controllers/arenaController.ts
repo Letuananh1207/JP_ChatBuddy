@@ -98,29 +98,36 @@ export const submitAnswer = async (req: AuthRequest, res: Response) => {
     const { code } = req.params;
     if (!code)
       return res.status(400).json({ message: "Room code is required" });
-    const { questionIndex, answer, duration } = req.body as {
-      questionIndex: number;
-      answer: string;
-      duration: number;
+
+    const { questionIndex, answer, duration, score } = req.body as {
+      questionIndex?: number;
+      answer?: string;
+      duration?: number;
+      score?: number;
     };
 
-    if (
-      typeof questionIndex !== "number" ||
-      typeof answer !== "string" ||
-      typeof duration !== "number"
+    let room;
+    if (typeof score === "number" && typeof duration === "number") {
+      room = await arenaService.submitResult(code, userId, score, duration);
+    } else if (
+      typeof questionIndex === "number" &&
+      typeof answer === "string" &&
+      typeof duration === "number"
     ) {
-      return res
-        .status(400)
-        .json({ message: "questionIndex, answer and duration are required" });
+      room = await arenaService.submitAnswer(
+        code,
+        userId,
+        questionIndex,
+        answer,
+        duration,
+      );
+    } else {
+      return res.status(400).json({
+        message:
+          "Provide either score and duration, or questionIndex, answer and duration",
+      });
     }
 
-    const room = await arenaService.submitAnswer(
-      code,
-      userId,
-      questionIndex,
-      answer,
-      duration,
-    );
     if (!room)
       return res.status(404).json({ message: "Room not found or not running" });
     res.status(200).json(room);
