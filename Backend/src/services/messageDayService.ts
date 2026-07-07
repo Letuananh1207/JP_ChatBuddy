@@ -18,6 +18,7 @@ export const appendMessage = async (userId: string, content: string) => {
     doc = new MessageDay({
       userId,
       dateVN: todayVN,
+      date: todayVN,
       messages: [{ content }],
     });
   } else {

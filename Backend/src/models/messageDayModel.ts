@@ -1,5 +1,6 @@
 // src/models/MessageDay.ts
 import mongoose, { Schema, Document, Types } from "mongoose";
+import { getVietnamDateKey } from "../utils/vietnamTime";
 
 export interface IMessageLog {
   content: string;
@@ -17,12 +18,15 @@ export interface IGrammarSummary {
 export interface IMessageDay extends Document {
   userId: Types.ObjectId | string;
   dateVN: string;
+  date: string;
   messages: IMessageLog[];
 }
 
 const MessageDaySchema: Schema = new Schema({
   userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
   dateVN: { type: String, required: true },
+  // legacy-compatible date field: populate with same YYYY-MM-DD key
+  date: { type: String, required: true, default: () => getVietnamDateKey() },
   messages: [
     {
       content: { type: String, required: true },
