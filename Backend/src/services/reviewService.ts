@@ -3,6 +3,36 @@ import Review, { IReviewItem } from "../models/reviewModel";
 import MessageDay from "../models/messageDayModel";
 import { groq, GROQ_MODEL } from "../config/groq";
 import { reviewPrompt } from "../utils/prompts";
+
+function extractJsonObject(text: string): any {
+  const trimmed = text.trim();
+  if (!trimmed) return null;
+
+  const candidates = [
+    trimmed,
+    trimmed.match(/\{[\s\S]*\}/)?.[0],
+    trimmed.match(/```json\s*([\s\S]*?)```/)?.[1],
+    trimmed.match(/```\s*([\s\S]*?)```/)?.[1],
+  ].filter(Boolean) as string[];
+
+  for (const candidate of candidates) {
+    try {
+      return JSON.parse(candidate);
+    } catch {
+      // try to repair common issues
+      const repaired = candidate
+        .replace(/,\s*([}\]])/g, "$1")
+        .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?\s*:/g, '"$2":');
+      try {
+        return JSON.parse(repaired);
+      } catch {
+        continue;
+      }
+    }
+  }
+
+  return null;
+}
 import {
   getVietnamDateKey,
   parseVietnamDate,
@@ -98,10 +128,10 @@ export async function analyzeReview(
     });
 
     const responseText = completion.choices[0]?.message?.content || "{}";
-    const match = responseText.match(/\{[\s\S]*\}/);
-    const parsed: any = match
-      ? JSON.parse(match[0])
-      : { reviews: [], summary: [] };
+    const parsed: any = extractJsonObject(responseText) || {
+      reviews: [],
+      summary: [],
+    };
 
     const reviewResults: IReviewItem[] = Array.isArray(parsed.reviews)
       ? parsed.reviews
